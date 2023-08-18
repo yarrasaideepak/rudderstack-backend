@@ -1,10 +1,12 @@
 package com.rudderstack.backend.Events.services.impl;
 
 import com.rudderstack.backend.Events.beans.AddEventBean;
+import com.rudderstack.backend.Events.beans.Event;
+import com.rudderstack.backend.common.Constants.Constants;
+import com.rudderstack.backend.common.Constants.ErrorCodes;
+import com.rudderstack.backend.common.mapper.CommonMapper;
 import com.rudderstack.backend.Events.services.EventService;
-import com.rudderstack.backend.Tracking.beans.RequestStatusBean;
-import com.rudderstack.backend.Tracking.beans.TrackingPlanBean;
-import com.rudderstack.backend.Tracking.services.TrackingService;
+import com.rudderstack.backend.common.beans.Response;
 import com.rudderstack.backend.Tracking.services.impl.TrackingServiceImpl;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,70 +22,48 @@ public class EventServiceImpl implements EventService {
 
     @Autowired
     TrackingServiceImpl trackingService;
+    @Autowired
+    CommonMapper commonMapper;
 
-    //Due to time constraints, we're not using these for a database in the project.
-    // I hope you understand.
+    private HashMap<String, Event> eventDetails = new HashMap<>();
 
-    private HashMap<String,List<String>> event_to_tracks = new HashMap<>();
-    private List<TrackingPlanBean.Tracking_Plan.Rules.Events> allEvents = new ArrayList<>();
+    public Response addEvent(AddEventBean event){
 
-    public RequestStatusBean addEvent(AddEventBean event){
-
-        if(event_to_tracks.containsKey(event.getEvent().getName())){
-            return RequestStatusBean.builder().ErrorCode("Err003").Error("This event is already present").build();
+        if(eventDetails.containsKey(event.getEvent().getName()) && eventDetails.get(event.getEvent().getName()).getCount()>=1){
+            return Response.builder().Error(ErrorCodes.EVENT_ALREADY_EXISTS.getErrorMessage())
+                    .ErrorCode(ErrorCodes.EVENT_ALREADY_EXISTS.getErrorCode()).build();
         }
 
-        allEvents.add(event.getEvent());
-
-        event_to_tracks.put(event.getEvent().getName(),event.getTracks());
-
-        HashMap<String,TrackingPlanBean> trackingDetails = trackingService.getTrackingDetails();
-
-        for(String trackNames: event.getTracks()) {
-            for(Map.Entry<String,TrackingPlanBean> mapElement : trackingDetails.entrySet()) {
-                    if (Objects.equals(trackNames, mapElement.getValue().getTracking_plan().getDisplay_name())) {
-                        mapElement.getValue().getTracking_plan().getRules().getEvents().add(event.getEvent());
-                    }
-            }
-        }
-
-        trackingService.setTrackingDetails(trackingDetails);
-
-        return RequestStatusBean.builder().message("Events Added Successfully").build();
+        List<String> trackNames = event.getTracks();
+        event.getEvent().setCount(1);
+        eventDetails.put(event.getEvent().getName(),event.getEvent());
+        return commonMapper.addEventInTrack(trackNames,event.getEvent().getName());
 
     }
 
-    public List<TrackingPlanBean.Tracking_Plan.Rules.Events> getEvent(){
+    public Object getEvent(String eventName){
 
-        return allEvents;
+        if(!eventDetails.containsKey(eventName) || eventDetails.get(eventName).getCount()<1){
+            return Response.builder().Error(ErrorCodes.EVENT_DOES_NOT_EXISTS.getErrorMessage())
+                    .ErrorCode(ErrorCodes.EVENT_DOES_NOT_EXISTS.getErrorCode()).build();
+        }
+
+        return eventDetails.get(eventName);
 
     }
 
-    public RequestStatusBean updateEvent(TrackingPlanBean.Tracking_Plan.Rules.Events event){
+    public Response updateEvent(Event event){
 
-        if(!event_to_tracks.containsKey(event.getName())){
-            return RequestStatusBean.builder().ErrorCode("Err004").Error("This event Does not exist to update").build();
+        if(!eventDetails.containsKey(event.getName()) || eventDetails.get(event.getName()).getCount()<1){
+            return Response.builder().Error(ErrorCodes.EVENT_DOES_NOT_EXISTS.getErrorMessage())
+                    .ErrorCode(ErrorCodes.EVENT_DOES_NOT_EXISTS.getErrorCode()).build();
         }
 
-        List<TrackingPlanBean> tracks= trackingService.getTracking();
+        int currCount  = eventDetails.get(event.getName()).getCount();
+        event.setCount(currCount);
+        eventDetails.put(event.getName(), event);
 
-        for(String trackName: event_to_tracks.get(event.getName())){
-
-            for(TrackingPlanBean trackBean: tracks){
-                if(Objects.equals(trackBean.getTracking_plan().getDisplay_name(), trackName)){
-                    for(int i=0;i<trackBean.getTracking_plan().getRules().getEvents().size();i++){
-                        if(Objects.equals(trackBean.getTracking_plan().getRules().getEvents().get(i).getName(), event.getName())){
-                            trackBean.getTracking_plan().getRules().getEvents().set(i,event);
-                            trackingService.updateTracking(trackBean);
-                            break;
-                        }
-                    }
-                }
-            }
-
-        }
-
-        return RequestStatusBean.builder().message("Update is Successful").build();
+        return Response.builder().message(Constants.EVENT_UPDATED).build();
 
     }
 

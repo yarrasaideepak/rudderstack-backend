@@ -1,9 +1,12 @@
 package com.rudderstack.backend.Tracking.services.impl;
 
-import com.rudderstack.backend.Events.beans.AddEventBean;
+import com.rudderstack.backend.Events.beans.Event;
+import com.rudderstack.backend.common.Constants.Constants;
+import com.rudderstack.backend.common.Constants.ErrorCodes;
+import com.rudderstack.backend.common.mapper.CommonMapper;
 import com.rudderstack.backend.Events.services.impl.EventServiceImpl;
-import com.rudderstack.backend.Tracking.beans.RequestStatusBean;
-import com.rudderstack.backend.Tracking.beans.TrackingPlanBean;
+import com.rudderstack.backend.common.beans.Response;
+import com.rudderstack.backend.Tracking.beans.TrackingPlan;
 import com.rudderstack.backend.Tracking.services.TrackingService;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,45 +23,101 @@ public class TrackingServiceImpl implements TrackingService {
     @Autowired
     EventServiceImpl eventService;
 
-    //Due to time constraints,I am not going with database in the project.
-    // I hope you understand.
-    private HashMap<String,TrackingPlanBean> trackingDetails = new HashMap<>();
+    @Autowired
+    CommonMapper commonMapper;
 
-    public RequestStatusBean addTrack(TrackingPlanBean trackingPlanBean){
+    private HashMap<String, TrackingPlan> trackingDetails = new HashMap<>();
 
-        if(trackingDetails.containsKey(trackingPlanBean.getTracking_plan().getDisplay_name())){
-            return RequestStatusBean.builder().Error("Tracking Plan with same Display name exists").ErrorCode("Err001").build();
+    public Response addTrack(TrackingPlan trackingPlan){
+
+        if(trackingDetails.containsKey(trackingPlan.getTracking_plan().getDisplay_name())){
+            return Response.builder().Error(ErrorCodes.TRACK_WITH_SAME_DISPLAY_EXISTS.getErrorMessage())
+                    .ErrorCode(ErrorCodes.TRACK_WITH_SAME_DISPLAY_EXISTS.getErrorCode()).build();
         }
-        trackingDetails.put(trackingPlanBean.getTracking_plan().getDisplay_name(),trackingPlanBean);
 
-        HashMap<String,List<String>> event_to_tracks = eventService.getEvent_to_tracks();
-        for(TrackingPlanBean.Tracking_Plan.Rules.Events event: trackingPlanBean.getTracking_plan().getRules().getEvents()){
-            List<String> trackName = new ArrayList<>();
-            trackName.add(trackingPlanBean.getTracking_plan().getDisplay_name());
-            event_to_tracks.put(event.getName(),trackName);
+        Response response = commonMapper.addEvent(trackingPlan.getTracking_plan().getRules().getEvents());
+
+        if(!Objects.isNull(response.getError())){return response;}
+
+
+        List<String> eventNames = new ArrayList<>();
+        for(Event event: trackingPlan.getTracking_plan().getRules().getEvents()){
+            eventNames.add(event.getName());
         }
-        eventService.setEvent_to_tracks(event_to_tracks);
 
-        return RequestStatusBean.builder().message("Tracking added Successfully").build();
+        trackingPlan.getTracking_plan().getRules().setEvents(new ArrayList<>());
+        trackingPlan.getTracking_plan().getRules().setEventNames(eventNames);
+
+        trackingDetails.put(trackingPlan.getTracking_plan().getDisplay_name(),trackingPlan);
+
+        return Response.builder().message(Constants.TRACK_SUCCESSFULLY_ADDED).build();
     }
 
-    public List<TrackingPlanBean> getTracking(){
-        List<TrackingPlanBean> trackingPlanBeanList = new ArrayList<>();
+    public Object getTracking(String trackName){
 
-        for (Map.Entry<String,TrackingPlanBean> mapElement : trackingDetails.entrySet()) {
-            trackingPlanBeanList.add(mapElement.getValue());
+        if(!trackingDetails.containsKey(trackName)){
+            return Response.builder().Error(ErrorCodes.TRACK_DOEST_NOT_EXIST.getErrorMessage())
+                    .ErrorCode(ErrorCodes.TRACK_DOEST_NOT_EXIST.getErrorCode()).build();
         }
 
-        return trackingPlanBeanList;
+        TrackingPlan orgTrackingPlan = trackingDetails.get(trackName);
+        List<String> eventNames = orgTrackingPlan.getTracking_plan().getRules().getEventNames();
+
+        List<Event> eventList = new ArrayList<>();
+
+        for(String eventName: eventNames){
+            eventList.add(eventService.getEventDetails().get(eventName));
+        }
+
+        TrackingPlan trackingPlan = new TrackingPlan();
+
+        TrackingPlan.Tracking_Plan tracking_plan = new TrackingPlan.Tracking_Plan();
+        TrackingPlan.Tracking_Plan.Rules rules = new TrackingPlan.Tracking_Plan.Rules();
+        rules.setEvents(eventList);
+        rules.setEventNames(null);
+        tracking_plan.setRules(rules);
+        tracking_plan.setDisplay_name(orgTrackingPlan.getTracking_plan().getDisplay_name());
+
+        trackingPlan.setTracking_plan(tracking_plan);
+
+        return trackingPlan;
+
     }
 
-    public RequestStatusBean updateTracking(TrackingPlanBean trackingPlanBean){
-        if(!trackingDetails.containsKey(trackingPlanBean.getTracking_plan().getDisplay_name())){
-            return RequestStatusBean.builder().Error("There is no Tracking plan with provided display name").ErrorCode("Err002").build();
-        }
-        trackingDetails.put(trackingPlanBean.getTracking_plan().getDisplay_name(),trackingPlanBean);
+    public Response updateTracking(TrackingPlan trackingPlan){
 
-        return RequestStatusBean.builder().message("Tracking Update Successfully").build();
+        if(!trackingDetails.containsKey(trackingPlan.getTracking_plan().getDisplay_name())){
+            return Response.builder().Error(ErrorCodes.TRACK_DOEST_NOT_EXIST.getErrorMessage())
+                    .ErrorCode(ErrorCodes.TRACK_DOEST_NOT_EXIST.getErrorCode()).build();
+        }
+
+        String trackName = trackingPlan.getTracking_plan().getDisplay_name();
+
+        TrackingPlan orgTrackingPlan = trackingDetails.get(trackName);
+        List<String> eventNames = orgTrackingPlan.getTracking_plan().getRules().getEventNames();
+
+        for(String eventName: eventNames){
+            int currCount = eventService.getEventDetails().get(eventName).getCount();
+            eventService.getEventDetails().get(eventName).setCount(currCount-1);
+        }
+
+        Response response = commonMapper.addEvent(trackingPlan.getTracking_plan().getRules().getEvents());
+
+        if(!Objects.isNull(response.getError())){return response;}
+
+
+        List<String> newEventNames = new ArrayList<>();
+        for(Event event: trackingPlan.getTracking_plan().getRules().getEvents()){
+            newEventNames.add(event.getName());
+        }
+
+        trackingPlan.getTracking_plan().getRules().setEvents(new ArrayList<>());
+        trackingPlan.getTracking_plan().getRules().setEventNames(newEventNames);
+
+        trackingDetails.put(trackingPlan.getTracking_plan().getDisplay_name(),trackingPlan);
+
+        return response;
+
     }
 
 }

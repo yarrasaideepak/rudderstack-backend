@@ -1,15 +1,12 @@
 package com.rudderstack.backend.Events.controller;
 
 import com.rudderstack.backend.Events.beans.AddEventBean;
-import com.rudderstack.backend.Events.services.EventService;
+import com.rudderstack.backend.Events.beans.Event;
 import com.rudderstack.backend.Events.services.impl.EventServiceImpl;
-import com.rudderstack.backend.Tracking.beans.RequestStatusBean;
-import com.rudderstack.backend.Tracking.beans.TrackingPlanBean;
-import com.rudderstack.backend.Tracking.services.impl.TrackingServiceImpl;
+import com.rudderstack.backend.common.beans.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 
 @RestController
 @RequestMapping("/event")
@@ -20,19 +17,19 @@ public class EventController {
 
     @RequestMapping("/addEvent")
     @PostMapping
-    public RequestStatusBean addEvent(@RequestBody AddEventBean event){
+    public Response addEvent(@RequestBody AddEventBean event){
         return eventService.addEvent(event);
     }
 
-    @RequestMapping("/getEvent")
+    @RequestMapping("/getEvent/{eventName}")
     @GetMapping
-    public List<TrackingPlanBean.Tracking_Plan.Rules.Events> getEvent(){
-        return eventService.getEvent();
+    public Object getEvent(@PathVariable String eventName){
+        return eventService.getEvent(eventName);
     }
 
     @RequestMapping("/updateEvent")
     @PutMapping
-    public RequestStatusBean updateEvent(@RequestBody TrackingPlanBean.Tracking_Plan.Rules.Events event){
+    public Response updateEvent(@RequestBody Event event){
         return eventService.updateEvent(event);
     }
 

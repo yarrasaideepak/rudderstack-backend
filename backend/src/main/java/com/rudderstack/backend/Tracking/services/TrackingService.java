@@ -1,14 +1,12 @@
 package com.rudderstack.backend.Tracking.services;
 
-import com.rudderstack.backend.Tracking.beans.RequestStatusBean;
-import com.rudderstack.backend.Tracking.beans.TrackingPlanBean;
-
-import java.util.List;
+import com.rudderstack.backend.common.beans.Response;
+import com.rudderstack.backend.Tracking.beans.TrackingPlan;
 
 public interface TrackingService {
 
-    RequestStatusBean addTrack(TrackingPlanBean trackingPlanBean);
-    List<TrackingPlanBean> getTracking();
-    RequestStatusBean updateTracking(TrackingPlanBean trackingPlanBean);
+    Response addTrack(TrackingPlan trackingPlanBean);
+    Object getTracking(String trackName);
+    Response updateTracking(TrackingPlan trackingPlan);
 
 }

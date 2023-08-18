@@ -1,15 +1,13 @@
 package com.rudderstack.backend.Events.services;
 
 import com.rudderstack.backend.Events.beans.AddEventBean;
-import com.rudderstack.backend.Tracking.beans.RequestStatusBean;
-import com.rudderstack.backend.Tracking.beans.TrackingPlanBean;
-
-import java.util.List;
+import com.rudderstack.backend.Events.beans.Event;
+import com.rudderstack.backend.common.beans.Response;
 
 public interface EventService {
 
-    RequestStatusBean addEvent(AddEventBean event);
-    List<TrackingPlanBean.Tracking_Plan.Rules.Events> getEvent();
-    RequestStatusBean updateEvent(TrackingPlanBean.Tracking_Plan.Rules.Events event);
+    Response addEvent(AddEventBean event);
+    Object getEvent(String eventName);
+    Response updateEvent(Event event);
 
 }

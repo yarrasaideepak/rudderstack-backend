@@ -1,12 +1,10 @@
 package com.rudderstack.backend.Tracking.controller;
 
-import com.rudderstack.backend.Tracking.beans.RequestStatusBean;
-import com.rudderstack.backend.Tracking.beans.TrackingPlanBean;
+import com.rudderstack.backend.common.beans.Response;
+import com.rudderstack.backend.Tracking.beans.TrackingPlan;
 import com.rudderstack.backend.Tracking.services.impl.TrackingServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/tracking")
@@ -17,19 +15,19 @@ public class TrackingController {
 
     @RequestMapping("/addTracking")
     @PostMapping
-    public RequestStatusBean addTracking(@RequestBody TrackingPlanBean trackingPlan){
+    public Response addTracking(@RequestBody TrackingPlan trackingPlan){
         return trackingService.addTrack(trackingPlan);
     }
 
-    @RequestMapping("/getTracking")
+    @RequestMapping("/getTracking/{trackName}")
     @GetMapping
-    public List<TrackingPlanBean> getTracking(){
-        return trackingService.getTracking();
+    public Object getTracking(@PathVariable String trackName){
+        return trackingService.getTracking(trackName);
     }
 
     @RequestMapping("/updateTracking")
     @PutMapping
-    public RequestStatusBean updateTracking(@RequestBody TrackingPlanBean trackingPlan){
+    public Response updateTracking(@RequestBody TrackingPlan trackingPlan){
         return trackingService.updateTracking(trackingPlan);
     }
 
