@@ -1,4 +1,10 @@
-Multiple endpoints are added in springboot to fetch tracking details, Add tracking details, Update tracking details.
+Multiple endpoints are added in springboot to 
+    Fetch tracking details    /getTracking/{trackName}
+    Add tracking details      /addTracking
+    Update tracking details   /updateTracking
 
-Multiple endpoints are added in springboot to fetch Events, Events, Update Events.
+Multiple endpoints are added in springboot
+    Fetch Events    /getEvent/{eventName}
+    Add Events      /addEvent
+    Update Events   /updateEvent
 
