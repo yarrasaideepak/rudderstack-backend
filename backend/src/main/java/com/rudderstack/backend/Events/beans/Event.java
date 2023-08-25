@@ -29,6 +29,9 @@ public class Event extends Response {
 
     @Getter
     @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @JsonSerialize
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class RulesForObjects{
         @JsonProperty("$schema")
@@ -37,8 +40,6 @@ public class Event extends Response {
         private String type;
         @JsonProperty("properties")
         private Map<String, Object> properties;
-        @JsonProperty("required")
-        private String[] required;
 
     }
 

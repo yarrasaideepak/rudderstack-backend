@@ -13,12 +13,14 @@ public class TrackingController {
     @Autowired
     TrackingServiceImpl trackingService;
 
+    @CrossOrigin(origins = "http://localhost:3000")
     @RequestMapping("/addTracking")
     @PostMapping
     public Response addTracking(@RequestBody TrackingPlan trackingPlan){
         return trackingService.addTrack(trackingPlan);
     }
 
+    @CrossOrigin(origins = "http://localhost:3000")
     @RequestMapping("/getTracking/{trackName}")
     @GetMapping
     public Object getTracking(@PathVariable String trackName){
@@ -30,6 +32,5 @@ public class TrackingController {
     public Response updateTracking(@RequestBody TrackingPlan trackingPlan){
         return trackingService.updateTracking(trackingPlan);
     }
-
 
 }
